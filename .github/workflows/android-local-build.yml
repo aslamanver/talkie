@@ -1,0 +1,31 @@
+name: Android Local Build
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: self-hosted
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - uses: "google-github-actions/auth@v2"
+        with:
+          credentials_json: "${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}"
+
+      - uses: "google-github-actions/setup-gcloud@v3"
+
+      - run: ./cli/secrets.sh --download
+
+      - run: npm ci
+
+      - run: cd android && ./gradlew assembleRelease -PreactNativeArchitectures=x86_64
