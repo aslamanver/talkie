@@ -344,15 +344,6 @@ function App() {
       <SafeAreaView style={tw`flex-1`}>
         <ScrollView style={tw`flex-1 bg-white`}>
           <View style={tw`p-4 gap-4`}>
-            {localMediaStreamRef.current && (
-              <RTCView
-                streamURL={localMediaStreamRef.current.toURL()}
-                style={tw`w-50 h-40 bg-black`}
-              />
-            )}
-            {remoteStream && (
-              <RTCView streamURL={remoteStream.toURL()} style={tw`w-50 h-40 bg-black`} />
-            )}
             <TouchableOpacity
               style={tw`p-4 bg-blue-500 rounded-lg`}
               onPress={() => displayNotification('Notification message')}
@@ -362,7 +353,13 @@ function App() {
             <TouchableOpacity style={tw`p-4 bg-blue-500 rounded-lg`} onPress={setupMedia}>
               <Text style={tw`text-white text-center font-bold`}>setupMedia(0.2)</Text>
             </TouchableOpacity>
-            <View style={tw`h-1 bg-blue-100 rounded-xl`} />
+            <View style={tw`flex-row gap-4`}>
+              <RTCView
+                streamURL={localMediaStreamRef.current?.toURL()}
+                style={tw`flex-1 h-40 bg-blue-100`}
+              />
+              <RTCView streamURL={remoteStream?.toURL()} style={tw`flex-1 h-40 bg-purple-100`} />
+            </View>
             <TextInput
               value={caller}
               onChangeText={text => setCaller(text)}
@@ -374,13 +371,6 @@ function App() {
             <TouchableOpacity style={tw`p-4 bg-blue-500 rounded-lg`} onPress={storeCaller}>
               <Text style={tw`text-white text-center font-bold`}>storeCaller(0.3)</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={tw`p-4 bg-blue-800 rounded-lg`} onPress={createOffer}>
-              <Text style={tw`text-white text-center font-bold`}>createOffer(1)</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={tw`p-4 bg-blue-800 rounded-lg`} onPress={fetchAnswer}>
-              <Text style={tw`text-white text-center font-bold`}>fetchAnswer(4)</Text>
-            </TouchableOpacity>
-            <View style={tw`h-1 bg-blue-100 rounded-xl`} />
             <TextInput
               value={receiver}
               onChangeText={text => setReceiver(text)}
@@ -392,6 +382,14 @@ function App() {
             <TouchableOpacity style={tw`p-4 bg-blue-500 rounded-lg`} onPress={storeReceiver}>
               <Text style={tw`text-white text-center font-bold`}>storeReceiver(0.4)</Text>
             </TouchableOpacity>
+            <View style={tw`h-1 bg-blue-100 rounded-xl`} />
+            <TouchableOpacity style={tw`p-4 bg-blue-800 rounded-lg`} onPress={createOffer}>
+              <Text style={tw`text-white text-center font-bold`}>createOffer(1)</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={tw`p-4 bg-blue-800 rounded-lg`} onPress={fetchAnswer}>
+              <Text style={tw`text-white text-center font-bold`}>fetchAnswer(4)</Text>
+            </TouchableOpacity>
+            <View style={tw`h-1 bg-blue-100 rounded-xl`} />
             <TouchableOpacity style={tw`p-4 bg-purple-800 rounded-lg`} onPress={createAnswer}>
               <Text style={tw`text-white text-center font-bold`}>createAnswer(2)</Text>
             </TouchableOpacity>

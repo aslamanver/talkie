@@ -77,4 +77,6 @@ yarn-error.log
 .env
 GOOGLE_ACCESS_TOKEN.txt
 google-service-account.json
+google-services.json
+GoogleService-Info.plist
 
