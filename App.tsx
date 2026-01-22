@@ -16,15 +16,11 @@ import tw from 'twrnc';
 
 globalThis.RNFB_SILENCE_MODULAR_DEPRECATION_WARNINGS = true;
 
-// let localMediaStream;
-// let remoteMediaStream;
-let isVoiceOnly = false;
-
 function App() {
   //
   const [caller, setCaller] = useState('');
   const [receiver, setReceiver] = useState('');
-  const [statusText, setStatusText] = useState('disconnected');
+  const [statusText, setStatusText] = useState('');
 
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const localMediaStreamRef = useRef<MediaStream | null>(null);
@@ -196,7 +192,15 @@ function App() {
   }, [receiver]);
 
   const setupMedia = useCallback(async () => {
+    //
     try {
+      notifee.requestPermission();
+      notifee.createChannel({
+        id: 'default',
+        name: 'Default Channel',
+        importance: AndroidImportance.HIGH,
+      });
+
       const mediaStream = await mediaDevices.getUserMedia({
         audio: true,
         video: {
@@ -204,12 +208,12 @@ function App() {
           facingMode: 'user',
         },
       });
+      const isVoiceOnly = false;
       if (isVoiceOnly) {
         let videoTrack = await mediaStream.getVideoTracks()[0];
         videoTrack.enabled = false;
       }
       localMediaStreamRef.current = mediaStream;
-      // Add our stream to the peer connection.
       localMediaStreamRef.current
         .getTracks()
         .forEach(track => peerConnectionRef.current?.addTrack(track, localMediaStreamRef.current));
@@ -226,10 +230,6 @@ function App() {
         if (caller.trim().length === 0) {
           return;
         }
-        // await firestore().collection('pnumbers').doc(caller).collection('candidates').add({
-        //   candidate,
-        //   createdAt: firestore.FieldValue.serverTimestamp(),
-        // });
         await firestore()
           .collection('pnumbers')
           .doc(caller)
@@ -247,7 +247,6 @@ function App() {
 
   useEffect(() => {
     //
-
     function connectionstatechange(event) {
       switch (peerConnectionRef.current.connectionState) {
         case 'closed':
@@ -306,10 +305,14 @@ function App() {
     }
 
     function track(event) {
-      let stream = remoteStream;
-      if (!stream) stream = new MediaStream();
-      stream.addTrack(event.track);
-      setRemoteStream(stream);
+      setRemoteStream(prevStream => {
+        let stream = prevStream;
+        if (!stream) {
+          stream = new MediaStream();
+        }
+        stream.addTrack(event.track);
+        return stream;
+      });
       displayNotification('Remote track added.');
     }
 
@@ -337,7 +340,7 @@ function App() {
       peerConnectionRef.current.removeEventListener('signalingstatechange', signalingstatechange);
       peerConnectionRef.current.removeEventListener('track', track);
     };
-  }, [remoteStream, storeCandidate]);
+  }, [storeCandidate]);
 
   return (
     <SafeAreaProvider>
@@ -407,23 +410,17 @@ function App() {
   );
 }
 
-async function displayNotification(message: string) {
+const displayNotification = async (message: string) => {
   ToastAndroid.show(message, ToastAndroid.SHORT);
-  await notifee.requestPermission();
-  const channelId = await notifee.createChannel({
-    id: 'default',
-    name: 'Default Channel',
-    importance: AndroidImportance.HIGH,
-  });
   await notifee.displayNotification({
     title: 'Talkie',
     body: message,
     android: {
-      channelId,
+      channelId: 'default',
       smallIcon: 'ic_launcher',
       importance: AndroidImportance.HIGH,
     },
   });
-}
+};
 
 export default App;
