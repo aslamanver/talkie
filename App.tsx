@@ -22,9 +22,20 @@ function App() {
   const [receiver, setReceiver] = useState('');
   const [statusText, setStatusText] = useState('');
 
+  const callerRef = useRef('');
+  const receiverRef = useRef('');
+
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const localMediaStreamRef = useRef<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+
+  useEffect(() => {
+    callerRef.current = caller;
+  }, [caller]);
+
+  useEffect(() => {
+    receiverRef.current = receiver;
+  }, [receiver]);
 
   useEffect(() => {
     //
@@ -194,8 +205,8 @@ function App() {
   const setupMedia = useCallback(async () => {
     //
     try {
-      notifee.requestPermission();
-      notifee.createChannel({
+      await notifee.requestPermission();
+      await notifee.createChannel({
         id: 'default',
         name: 'Default Channel',
         importance: AndroidImportance.HIGH,
@@ -224,26 +235,61 @@ function App() {
     }
   }, []);
 
-  const storeCandidate = useCallback(
-    async (candidate: RTCIceCandidate) => {
-      try {
-        if (caller.trim().length === 0) {
-          return;
-        }
-        await firestore()
-          .collection('pnumbers')
-          .doc(caller)
-          .update({
-            candidates: firestore.FieldValue.arrayUnion(candidate),
-          });
-        displayNotification('ICE candidate stored.');
-      } catch (err) {
-        console.error('Error:', err);
-        ToastAndroid.show('Failed to store candidate.', ToastAndroid.SHORT);
+  const storeCandidate = useCallback(async (candidate: RTCIceCandidate) => {
+    try {
+      if (callerRef.current.trim().length === 0) {
+        return;
       }
-    },
-    [caller],
-  );
+      await firestore()
+        .collection('pnumbers')
+        .doc(callerRef.current)
+        .update({
+          candidates: firestore.FieldValue.arrayUnion(candidate),
+        });
+      displayNotification('ICE candidate stored.');
+    } catch (err) {
+      console.error('Error:', err);
+      ToastAndroid.show('Failed to store candidate.', ToastAndroid.SHORT);
+    }
+  }, []);
+
+  const remoteStreamRef = useRef<MediaStream | null>(null);
+
+  // Cleanup
+  useEffect(() => {
+    return () => {
+      //
+      console.log('Component unmounting, cleaning up resources...');
+
+      // Stop all local media tracks
+      if (localMediaStreamRef.current) {
+        //
+        localMediaStreamRef.current.getTracks().forEach(track => {
+          track.stop();
+          console.log('Stopped track:', track.kind);
+        });
+
+        localMediaStreamRef.current = null;
+      }
+
+      // Stop all remote media tracks
+      if (remoteStreamRef.current) {
+        //
+        remoteStreamRef.current.getTracks().forEach(track => {
+          track.stop();
+        });
+
+        remoteStreamRef.current = null;
+      }
+      // Close peer connection
+      if (peerConnectionRef.current) {
+        //
+        peerConnectionRef.current.close();
+        console.log('Peer connection closed');
+        peerConnectionRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     //
@@ -311,6 +357,7 @@ function App() {
           stream = new MediaStream();
         }
         stream.addTrack(event.track);
+        remoteStreamRef.current = stream;
         return stream;
       });
       displayNotification('Remote track added.');
