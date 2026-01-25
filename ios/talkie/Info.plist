@@ -39,6 +39,8 @@
 	<string>Location permission description</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Microphone permission description</string>
+	<key>NSVoIPUsageDescription</key>
+	<string>VoIP permission description</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
